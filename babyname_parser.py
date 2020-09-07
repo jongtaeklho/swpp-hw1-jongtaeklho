@@ -36,6 +36,14 @@ class BabynameFileNotFoundException(Exception):
 
 
 def check_filename_existence(func):
+    @wraps(func)
+    def wrapper(*args,**kwargs):
+        try:
+            return func(*args,**kwargs)
+        except FileNotFoundError as pathname :
+            raise BabynameFileNotFoundException("No such file: {}".format(pathname.filename))
+    return wrapper
+
     """
     (1 point)
     A decorator that catches the non-exiting filename argument and raises a custom `BabynameFileNotFoundException`.
@@ -63,19 +71,28 @@ class BabynameParser:
             dirname: The name of the directory where baby name html files are stored
             year: The year number. int.
         """
-        # TODO: Open and read html file of the corresponding year, and assign the content to `text`.
-        # Also, make the BabynameParser to have the year attribute.
-        text = "TODO"
+        pathname = os.path.join(dirname, "{}.html".format(year))
+        f=open(pathname,'r')
+        text=f.read()
+        self.year=year
+        regex=re.compile("<td>\w{1,60}</td>")
+        res=regex.findall(text)
+        
+        mylist=[(res[0][4:-5],res[1][4:-5],res[2][4:-5])]
+        i=3
+        while i <= (len(res)-3):
+            firs=res[i][4:-5]
+            secon=res[i+1][4:-5]
+            thir=res[i+2][4:-5]
+            mylist.append((firs,secon,thir))
+            i+=3
+        self.rank_to_names_tuples = mylist
 
-        # TODO: Implement the tuple extracting code.
-        # `self.rank_to_names_tuples` should be a list of tuples of ("rank", "male name", "female name").
-        # You can process the file line-by-line, but regex on the whole text at once is even easier.
-        # (If you resolve the previous TODO, the html content is saved in `text`.)
-        # You may find the following method useful: `re.findall`.
-        # See https://docs.python.org/3/library/re.html#re.findall.
-        self.rank_to_names_tuples = [("1", "TODO_male", "TODO_female"), ("2", "TODO_male", "TODO_female")]
-    
     def parse(self, parsing_lambda):
+        answer=[]
+        for i in self.rank_to_names_tuples :
+            answer.append(parsing_lambda(i))
+        return answer
         """
         (2 points)
         Collects a list of babynames parsed from the (rank, male-name, female-name) tuples.

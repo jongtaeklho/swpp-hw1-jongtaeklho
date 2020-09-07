@@ -6,13 +6,16 @@ import os
 from functools import wraps
 
 class BabyFetchException(Exception):
-    """
-    A custom exception for the cases where it fails to fetch the html file from the internet.
-    """
     pass
 
-
 def safe_internet_fetch(func):
+    @wraps(func)
+    def safewrapper(*args,**kwargs):
+        try:
+            return func(*args,**kwargs)
+        except urllib.error.URLError :
+            BabyFetchException()
+    return safewrapper        
     """
     (1 point)
     A decorator that catches fetching error (i.e. urllib.error.URLERROR) and raises a custom `BabyFetchException`.
@@ -27,6 +30,13 @@ def safe_internet_fetch(func):
 
 @safe_internet_fetch
 def fetch_top_1000(url, year):
+
+    dd="year="
+    dd+=repr(year)
+    dd+="&top=1000"
+    response=urllib.request.urlopen(url,data=dd.encode())
+    text=response.read().decode()
+    return text 
     """
     (2 points)
     Given a year of interest, fetches the html file from the top1000 popular names
@@ -38,7 +48,6 @@ def fetch_top_1000(url, year):
     Return:
         text: a string. HTML content of the fetch webpage.
     """
-
     # TODO: Implement this function.
     # Send POST request to the given url (https://www.ssa.gov/cgi-bin/popularnames.cgi) with the data by inspecting the web page.
     # Hint: You can concatenate multiple data using '&' (e.g. data = "month=December&day=25")
